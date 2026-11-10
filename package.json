@@ -1,0 +1,22 @@
+{
+  "name": "volunteerhub",
+  "version": "1.0.0",
+  "description": "VolunteerHub - Staffing & Payment Tracking for Paid Volunteer Events",
+  "private": true,
+  "workspaces": [
+    "server",
+    "client"
+  ],
+  "scripts": {
+    "server": "npm --prefix server run dev",
+    "client": "npm --prefix client run dev",
+    "dev": "concurrently \"npm run server\" \"npm run client\"",
+    "test": "npm --prefix server test",
+    "test:concurrency": "npm --prefix server run test:concurrency",
+    "seed": "npm --prefix server run seed"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}
+
