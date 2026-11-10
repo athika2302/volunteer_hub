@@ -53,6 +53,11 @@ const eventSchema = new mongoose.Schema(
       ref: 'User',
       required: true,
     },
+    // True if event is archived by admin
+    isArchived: {
+      type: Boolean,
+      default: false,
+    },
   },
   {
     timestamps: true,

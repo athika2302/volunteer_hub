@@ -9,6 +9,7 @@ import EmptyState from '../../components/EmptyState.jsx';
 export default function EventsPage({ onSelectEvent }) {
   const { user, apiFetch } = useAuth();
   const [events, setEvents] = useState([]);
+  const [activeTab, setActiveTab] = useState('upcoming'); // 'upcoming' | 'past'
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -37,6 +38,23 @@ export default function EventsPage({ onSelectEvent }) {
     };
   };
 
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const upcomingEvents = events.filter((e) => {
+    const eventDate = new Date(e.date);
+    eventDate.setHours(0, 0, 0, 0);
+    return eventDate >= today;
+  });
+
+  const pastEvents = events.filter((e) => {
+    const eventDate = new Date(e.date);
+    eventDate.setHours(0, 0, 0, 0);
+    return eventDate < today;
+  });
+
+  const displayedEvents = activeTab === 'upcoming' ? upcomingEvents : pastEvents;
+
   return (
     <div className="space-y-6">
       {/* Welcome Banner */}
@@ -46,9 +64,35 @@ export default function EventsPage({ onSelectEvent }) {
             <span>Hello, {user?.name?.split(' ')[0]}</span>
             <span className="inline-block animate-wave">👋</span>
           </h1>
-          <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">
+          <p className="text-sm text-slate-600 dark:text-slate-300 mt-0.5">
             Discover upcoming paid volunteer events and reserved shifts
           </p>
+        </div>
+
+        {/* Tab switch */}
+        <div className="flex bg-slate-100 dark:bg-slate-800 p-1 rounded-xl self-start sm:self-auto">
+          <button
+            type="button"
+            onClick={() => setActiveTab('upcoming')}
+            className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-all ${
+              activeTab === 'upcoming'
+                ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 shadow-sm'
+                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+            }`}
+          >
+            Upcoming ({upcomingEvents.length})
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab('past')}
+            className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-all ${
+              activeTab === 'past'
+                ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 shadow-sm'
+                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+            }`}
+          >
+            Past events ({pastEvents.length})
+          </button>
         </div>
       </div>
 
@@ -65,14 +109,18 @@ export default function EventsPage({ onSelectEvent }) {
         <div className="space-y-4">
           <Skeleton variant="card" count={3} />
         </div>
-      ) : events.length === 0 ? (
+      ) : displayedEvents.length === 0 ? (
         <EmptyState
-          title="No upcoming events"
-          description="There are currently no events open for volunteer sign-up. Check back soon!"
+          title={activeTab === 'upcoming' ? 'No upcoming events' : 'No past events'}
+          description={
+            activeTab === 'upcoming'
+              ? 'There are currently no events open for volunteer sign-up. Check back soon!'
+              : 'There are no past events recorded.'
+          }
         />
       ) : (
         <div className="grid grid-cols-1 gap-4">
-          {events.map((event) => {
+          {displayedEvents.map((event) => {
             const dateInfo = formatDate(event.date);
             const roles = event.roles || [];
             const totalCapacity = roles.reduce((sum, r) => sum + r.capacity, 0);
@@ -97,7 +145,7 @@ export default function EventsPage({ onSelectEvent }) {
                     <span className="text-2xl font-black text-slate-900 dark:text-slate-100 leading-none my-0.5">
                       {dateInfo.day}
                     </span>
-                    <span className="text-[10px] text-slate-500 uppercase font-medium">
+                    <span className="text-[10px] text-slate-600 dark:text-slate-300 uppercase font-medium">
                       {dateInfo.weekday}
                     </span>
                   </div>
@@ -129,7 +177,7 @@ export default function EventsPage({ onSelectEvent }) {
 
                     {/* Roles Summary Footer */}
                     <div className="mt-3 pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs">
-                      <span className="text-slate-500 dark:text-slate-400 font-medium">
+                      <span className="text-slate-600 dark:text-slate-300 font-medium">
                         {roles.length} {roles.length === 1 ? 'role' : 'roles'} open ·{' '}
                         <strong className={spotsRemaining > 0 ? 'text-indigo-600 dark:text-indigo-400 font-semibold' : 'text-rose-500'}>
                           {spotsRemaining > 0 ? `${spotsRemaining} spots left` : 'Waitlist only'}

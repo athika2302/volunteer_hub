@@ -4,6 +4,7 @@ import {
   Clock,
   MapPin,
   Trash2,
+  Archive,
   PlusCircle,
   Users,
   CheckSquare,
@@ -26,6 +27,7 @@ export default function AdminEventsPage({ onCreateNew, onNavigateAttendance, onN
   const [loading, setLoading] = useState(true);
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [deleting, setDeleting] = useState(false);
+  const [archivingId, setArchivingId] = useState(null);
 
   useEffect(() => {
     loadEvents();
@@ -40,6 +42,19 @@ export default function AdminEventsPage({ onCreateNew, onNavigateAttendance, onN
       showError(err.message || 'Failed to load events');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleArchive = async (event) => {
+    setArchivingId(event._id);
+    try {
+      await apiFetch(`/api/events/${event._id}/archive`, { method: 'PATCH' });
+      showSuccess(`Archived "${event.title}". It is now hidden from volunteers.`);
+      await loadEvents();
+    } catch (err) {
+      showError(err.message || 'Failed to archive event');
+    } finally {
+      setArchivingId(null);
     }
   };
 
@@ -73,7 +88,7 @@ export default function AdminEventsPage({ onCreateNew, onNavigateAttendance, onN
           <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">
             Event Management
           </h1>
-          <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">
+          <p className="text-sm text-slate-600 dark:text-slate-300 mt-0.5">
             Create events, manage roles, track attendance, and monitor capacities
           </p>
         </div>
@@ -103,7 +118,7 @@ export default function AdminEventsPage({ onCreateNew, onNavigateAttendance, onN
                     <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100">
                       {event.title}
                     </h2>
-                    <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-500 dark:text-slate-400 mt-1">
+                    <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-700 dark:text-slate-300 mt-1">
                       <span className="flex items-center gap-1.5">
                         <Calendar className="w-3.5 h-3.5 text-indigo-600" />
                         {new Date(event.date).toLocaleDateString('en-US', {
@@ -124,16 +139,33 @@ export default function AdminEventsPage({ onCreateNew, onNavigateAttendance, onN
                   </div>
 
                   <div className="flex items-center gap-2 self-end sm:self-auto">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="text-rose-600 hover:text-rose-700 hover:bg-rose-50 dark:hover:bg-rose-950/30"
-                      icon={Trash2}
-                      onClick={() => setDeleteTarget(event)}
-                      title="Delete event"
-                    >
-                      Delete
-                    </Button>
+                    {event.isArchived ? (
+                      <span className="text-xs px-2.5 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-semibold border border-slate-200 dark:border-slate-700">
+                        Archived
+                      </span>
+                    ) : totalFilled > 0 ? (
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        icon={Archive}
+                        loading={archivingId === event._id}
+                        onClick={() => handleArchive(event)}
+                        title="Archive event (hides from volunteers while retaining records)"
+                      >
+                        Archive
+                      </Button>
+                    ) : (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-rose-600 hover:text-rose-700 hover:bg-rose-50 dark:hover:bg-rose-950/30"
+                        icon={Trash2}
+                        onClick={() => setDeleteTarget(event)}
+                        title="Delete event"
+                      >
+                        Delete
+                      </Button>
+                    )}
                   </div>
                 </div>
 
@@ -148,9 +180,9 @@ export default function AdminEventsPage({ onCreateNew, onNavigateAttendance, onN
                         <span>{r.name}</span>
                         <span className="text-emerald-600 font-bold">₹{r.payAmount}</span>
                       </div>
-                      <div className="flex justify-between items-center text-slate-500 text-[11px]">
+                      <div className="flex justify-between items-center text-slate-700 dark:text-slate-300 text-[11px] font-medium">
                         <span>Filled: {r.filled} / {r.capacity}</span>
-                        <span className={r.filled >= r.capacity ? 'text-rose-500 font-bold' : 'text-slate-400'}>
+                        <span className={r.filled >= r.capacity ? 'text-rose-600 dark:text-rose-400 font-bold' : 'text-slate-700 dark:text-slate-300 font-medium'}>
                           {r.filled >= r.capacity ? 'Full' : `${r.capacity - r.filled} left`}
                         </span>
                       </div>
@@ -160,7 +192,7 @@ export default function AdminEventsPage({ onCreateNew, onNavigateAttendance, onN
 
                 {/* Event Actions Footer */}
                 <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-100 dark:border-slate-800 text-xs">
-                  <span className="text-slate-500 font-medium">
+                  <span className="text-slate-700 dark:text-slate-300 font-medium">
                     Overall Staffing: {totalFilled} of {totalCapacity} filled
                   </span>
                   <div className="flex items-center gap-2">

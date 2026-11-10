@@ -20,11 +20,11 @@ export default function ProgressBar({
   return (
     <div className={`w-full ${className}`}>
       {showLabel && (
-        <div className="flex justify-between items-center text-xs font-medium text-slate-600 dark:text-slate-400 mb-1.5">
+        <div className="flex justify-between items-center text-xs font-medium text-slate-700 dark:text-slate-300 mb-1.5">
           <span>
             {filled} of {capacity} spots filled
           </span>
-          <span className={isFull ? 'text-rose-500 font-semibold' : 'text-slate-500'}>
+          <span className={isFull ? 'text-rose-600 dark:text-rose-400 font-semibold' : 'text-slate-700 dark:text-slate-300'}>
             {isFull ? 'Full' : `${capacity - filled} left`}
           </span>
         </div>

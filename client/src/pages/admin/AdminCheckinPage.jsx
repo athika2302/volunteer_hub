@@ -43,9 +43,20 @@ export default function AdminCheckinPage({ selectedEventId }) {
   const loadEvents = async () => {
     try {
       const data = await apiFetch('/api/events');
-      setEvents(data.events || []);
-      if (!activeEventId && data.events?.length > 0) {
-        setActiveEventId(data.events[0]._id);
+      const allEvents = data.events || [];
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      // Only show events occurring today or in the future in the active check-in dropdown
+      const activeEvents = allEvents.filter((e) => {
+        const eventDate = new Date(e.date);
+        eventDate.setHours(0, 0, 0, 0);
+        return eventDate >= today;
+      });
+
+      setEvents(activeEvents);
+      if (!activeEventId && activeEvents.length > 0) {
+        setActiveEventId(activeEvents[0]._id);
       }
     } catch (err) {
       showError(err.message || 'Failed to load events');

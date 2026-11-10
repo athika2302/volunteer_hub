@@ -43,6 +43,16 @@ export async function signUpForRole(volunteerId, roleId) {
   const event = role.event;
   if (!event) throw Object.assign(new Error('Event not found.'), { status: 404 });
 
+  // ── Block signups for past events ────────────────────────────────────────
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const eventDate = new Date(event.date);
+  eventDate.setHours(0, 0, 0, 0);
+
+  if (eventDate < today) {
+    throw Object.assign(new Error('This event has already happened.'), { status: 400 });
+  }
+
   // ── STEP 2: Conflict Check ────────────────────────────────────────────────
   // Check if the volunteer has another CONFIRMED shift that overlaps this one.
   // We do this BEFORE the capacity check to give a clear error message.

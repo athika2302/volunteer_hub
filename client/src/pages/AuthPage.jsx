@@ -116,15 +116,6 @@ export default function AuthPage() {
     }
   };
 
-  // Quick Demo fill buttons — only shown in development
-  const isDev = import.meta.env.DEV;
-  const fillDemo = (rolePhone, rolePass) => {
-    setMode('login');
-    setPhone(rolePhone);
-    setPassword(rolePass);
-    setErrors({});
-  };
-
   return (
     <main className="min-h-screen flex flex-col items-center justify-center p-4 bg-slate-50 dark:bg-slate-950 py-12">
       <div className="w-full max-w-md">
@@ -236,33 +227,6 @@ export default function AuthPage() {
               {mode === 'login' ? 'Sign In to Hub' : 'Create Account'}
             </Button>
           </form>
-
-          {/* Quick Demo Logins — only visible in local development (Vite DEV mode) */}
-          {isDev && (
-          <div className="mt-8 pt-6 border-t border-slate-100 dark:border-slate-800">
-            <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-3 text-center">
-              Dev — Quick Fill
-            </p>
-            <div className="grid grid-cols-2 gap-2 text-xs">
-              <button
-                type="button"
-                onClick={() => fillDemo('9000000001', 'admin123')}
-                className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/80 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 font-medium border border-slate-200/80 dark:border-slate-700 text-left transition-colors"
-              >
-                <span className="font-bold text-indigo-600 dark:text-indigo-400 block">Admin</span>
-                9000000001
-              </button>
-              <button
-                type="button"
-                onClick={() => fillDemo('9876543210', 'vol123')}
-                className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/80 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 font-medium border border-slate-200/80 dark:border-slate-700 text-left transition-colors"
-              >
-                <span className="font-bold text-emerald-600 dark:text-emerald-400 block">Volunteer</span>
-                9876543210 (Aarav)
-              </button>
-            </div>
-          </div>
-          )}
         </div>
       </div>
     </main>

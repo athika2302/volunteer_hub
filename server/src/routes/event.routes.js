@@ -1,6 +1,8 @@
 import { Router } from 'express';
 import Event from '../models/Event.js';
 import Role from '../models/Role.js';
+import Signup from '../models/Signup.js';
+import Payment from '../models/Payment.js';
 import { requireAuth, requireAdmin, requireApproved } from '../middleware/auth.js';
 import { validate } from '../middleware/validate.js';
 import { createEventSchema, updateEventSchema, roleSchema } from '../validators/schemas.js';
@@ -43,14 +45,17 @@ router.get('/', requireApproved, async (req, res, next) => {
     const limit = Math.min(50, Math.max(1, parseInt(req.query.limit, 10) || 20));
     const skip = (page - 1) * limit;
 
+    // Volunteers should only see non-archived events
+    const filter = req.user.role === 'admin' ? {} : { isArchived: { $ne: true } };
+
     const [events, total] = await Promise.all([
-      Event.find()
+      Event.find(filter)
         .populate('roles')
         .sort({ date: 1, startTime: 1 })
         .skip(skip)
         .limit(limit)
         .lean(),
-      Event.countDocuments(),
+      Event.countDocuments(filter),
     ]);
 
     res.json({
@@ -159,17 +164,59 @@ router.put('/:id', requireAdmin, validate(updateEventSchema), async (req, res, n
 /**
  * DELETE /api/events/:id
  * Admin only: deletes the event and all its roles.
- * Note: in production you'd also want to cancel any active signups.
+ * Rejects delete if event has any confirmed or attended signups, or payment records.
  */
 router.delete('/:id', requireAdmin, async (req, res, next) => {
   try {
-    const event = await Event.findByIdAndDelete(req.params.id);
+    const event = await Event.findById(req.params.id);
     if (!event) return res.status(404).json({ error: 'Event not found.' });
+
+    // Check for signups with confirmed or attended status
+    const hasActiveSignups = await Signup.exists({
+      event: req.params.id,
+      status: { $in: ['confirmed', 'attended'] },
+    });
+
+    // Check for payments covering signups for this event
+    const eventSignups = await Signup.find({ event: req.params.id }).select('_id');
+    const signupIds = eventSignups.map((s) => s._id);
+    const hasPayments = signupIds.length > 0
+      ? await Payment.exists({ signups: { $in: signupIds } })
+      : false;
+
+    if (hasActiveSignups || hasPayments) {
+      return res.status(400).json({
+        error: 'This event has volunteer records and cannot be deleted. You can archive it instead.',
+      });
+    }
+
+    await Event.findByIdAndDelete(req.params.id);
 
     // Cascade delete all roles belonging to this event
     await Role.deleteMany({ event: req.params.id });
+    // Also clean up any empty/cancelled signups if any
+    await Signup.deleteMany({ event: req.params.id });
 
     res.json({ message: 'Event and its roles have been deleted.' });
+  } catch (err) {
+    next(err);
+  }
+});
+
+/**
+ * PATCH /api/events/:id/archive
+ * Admin only: Archives an event so it is hidden from volunteers but preserves all history and records.
+ */
+router.patch('/:id/archive', requireAdmin, async (req, res, next) => {
+  try {
+    const event = await Event.findByIdAndUpdate(
+      req.params.id,
+      { isArchived: true },
+      { new: true }
+    ).populate('roles');
+
+    if (!event) return res.status(404).json({ error: 'Event not found.' });
+    res.json({ message: 'Event has been archived successfully.', event });
   } catch (err) {
     next(err);
   }
