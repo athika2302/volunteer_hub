@@ -6,6 +6,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 dotenv.config({ path: path.resolve(__dirname, '../.env') });
 
 import bcrypt from 'bcryptjs';
+import mongoose from 'mongoose';
 import { connectDB, disconnectDB } from './config/db.js';
 import User from './models/User.js';
 import Event from './models/Event.js';
@@ -19,8 +20,11 @@ export async function seedDatabase() {
     throw new Error('Refusing to seed database in production environment without FORCE_SEED=true.');
   }
 
-  console.log('[Seed] Connecting to MongoDB...');
-  await connectDB();
+  // Connect if not already connected
+  if (mongoose.connection.readyState !== 1) {
+    console.log('[Seed] Connecting to MongoDB...');
+    await connectDB();
+  }
 
   console.log('[Seed] Clearing existing collections...');
   await User.deleteMany({});
